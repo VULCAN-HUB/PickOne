@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{TITLE}} — PickOne</title>
+<style>
+:root { --bg:#111111; --panel:#1b1b1b; --line:#2a2a2a; --txt:#e8e8e8; --dim:#9a9a9a; --accent:#D35400; }
+* { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+body { background:var(--bg); color:var(--txt); font-family:Pretendard,"Malgun Gothic","Apple SD Gothic Neo",sans-serif; }
+header { position:sticky; top:0; z-index:50; background:rgba(17,17,17,.96); border-bottom:1px solid var(--line); padding:10px 14px; }
+.hrow { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+h1 { font-size:17px; font-weight:700; }
+.guide { margin-left:auto; font-size:15px; font-weight:700; color:var(--dim); }
+.guide.hit { color:var(--accent); }
+.notice { font-size:12.5px; color:var(--dim); margin-top:5px; }
+.toolbar { display:flex; gap:8px; margin-top:9px; flex-wrap:wrap; }
+button { background:var(--panel); color:var(--txt); border:1px solid var(--line); border-radius:6px; padding:7px 13px; font-size:13px; cursor:pointer; font-family:inherit; }
+button:hover { border-color:var(--accent); }
+button.primary { background:var(--accent); border-color:var(--accent); color:#fff; font-weight:700; }
+button.on { border-color:var(--accent); color:var(--accent); }
+select { background:var(--panel); color:var(--txt); border:1px solid var(--line); border-radius:6px; padding:7px 8px; font-size:13px; }
+#grid { display:flex; flex-wrap:wrap; gap:8px; padding:10px; justify-content:center; }
+.cell { width:220px; max-width:46vw; cursor:pointer; border:3px solid transparent; border-radius:8px; overflow:hidden; background:var(--panel); position:relative; }
+.cell.sel { border-color:var(--accent); }
+.cell .ph { width:100%; aspect-ratio:3/2; background:#222; display:block; object-fit:cover; }
+.cell .nm { font-size:11px; color:var(--dim); padding:4px 6px 5px; word-break:break-all; display:flex; gap:5px; align-items:center; }
+.cell.sel .nm { color:var(--txt); }
+.chk { position:absolute; top:6px; left:6px; width:24px; height:24px; border-radius:50%; background:var(--accent); color:#fff; display:none; align-items:center; justify-content:center; font-size:14px; font-weight:700; }
+.cell.sel .chk { display:flex; }
+.stars-mini { color:var(--accent); font-size:11px; margin-left:auto; white-space:nowrap; }
+.memo-dot { color:var(--accent); }
+/* 라이트박스 */
+#lb { position:fixed; inset:0; background:rgba(0,0,0,.96); z-index:100; display:none; flex-direction:column; }
+#lb.open { display:flex; }
+#lbimg { flex:1; min-height:0; object-fit:contain; width:100%; }
+#lbbar { display:flex; gap:8px; align-items:center; padding:10px 14px; background:var(--bg); border-top:1px solid var(--line); flex-wrap:wrap; }
+#lbname { font-size:13px; color:var(--dim); word-break:break-all; }
+.stars { font-size:22px; cursor:pointer; user-select:none; letter-spacing:2px; }
+.stars span { color:#444; } .stars span.on { color:var(--accent); }
+#lbmemo { flex:1; min-width:140px; background:var(--panel); border:1px solid var(--line); border-radius:6px; color:var(--txt); padding:7px; font-size:13px; font-family:inherit; }
+.nav { position:absolute; top:0; bottom:60px; width:22%; display:flex; align-items:center; color:#fff5; font-size:40px; user-select:none; cursor:pointer; }
+.nav:hover { color:var(--accent); }
+#prev { left:0; justify-content:flex-start; padding-left:10px; } #next { right:0; justify-content:flex-end; padding-right:10px; }
+#lbclose { position:absolute; top:8px; right:12px; font-size:30px; color:#fff8; cursor:pointer; z-index:5; }
+#lbcount { position:absolute; top:14px; left:14px; font-size:13px; color:#fff8; }
+/* 푸터·결과 */
+#panel { padding:14px; border-top:1px solid var(--line); }
+#outbox { width:100%; height:130px; background:var(--panel); color:var(--txt); border:1px solid var(--line); border-radius:6px; padding:9px; font-size:12.5px; margin-top:9px; display:none; font-family:Consolas,monospace; }
+.toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:var(--accent); color:#fff; padding:10px 18px; border-radius:8px; font-size:14px; z-index:200; display:none; }
+footer { text-align:center; color:#555; font-size:12px; padding:18px 0 26px; }
+.hint { font-size:12px; color:var(--dim); margin-top:8px; line-height:1.6; }
+</style>
+</head>
+<body>
+<header>
+  <div class="hrow">
+    <h1 id="title"></h1>
+    <span class="guide" id="guide"></span>
+  </div>
+  <div class="notice" id="notice"></div>
+  <div class="toolbar">
+    <select id="filter">
+      <option value="all">전체 보기</option>
+      <option value="sel">선택만</option>
+      <option value="memo">메모 있는 것</option>
+      <option value="r5">★5</option>
+      <option value="r4">★4</option>
+      <option value="r3">★3</option>
+      <option value="r2">★2</option>
+      <option value="r1">★1</option>
+    </select>
+    <select id="sort"><option value="name">파일명순</option><option value="time">촬영시간순</option></select>
+    <button id="btnBackup">선택 백업 저장(.txt)</button>
+    <button id="btnRestore">백업 불러오기</button>
+    <input type="file" id="fileRestore" accept=".txt,.json" style="display:none">
+  </div>
+</header>
+
+<div id="grid"></div>
+
+<div id="lb">
+  <div id="lbclose">×</div><div id="lbcount"></div>
+  <img id="lbimg" alt="">
+  <div class="nav" id="prev">‹</div><div class="nav" id="next">›</div>
+  <div id="lbbar">
+    <button id="lbsel" class="primary">선택</button>
+    <span class="stars" id="lbstars"><span>★</span><span>★</span><span>★</span><span>★</span><span>★</span></span>
+    <input id="lbmemo" placeholder="메모 입력…">
+    <span id="lbname"></span>
+  </div>
+</div>
+
+<div id="panel">
+  <div class="toolbar">
+    <button id="btnSave" class="primary">📄 결과 파일 저장 (작가에게 이 파일을 보내세요)</button>
+    <button id="btnCopyA">텍스트 복사 (별점·메모 포함)</button>
+    <button id="btnCopyN">파일명만 복사</button>
+    <button id="btnSelAll" style="display:none">전체 선택</button>
+  </div>
+  <textarea id="outbox" readonly></textarea>
+  <div class="hint">① <b>결과 파일 저장</b>을 누르면 작은 결과 파일(.json)이 다운로드됩니다 — 이 파일을 카톡/메일로 작가에게 보내주세요.<br>
+  ② 복사가 안 되는 환경에서는 위 텍스트 상자의 내용을 길게 눌러 전체 선택 후 복사하시면 됩니다.<br>
+  ③ 선택·별점·메모는 이 브라우저에 자동 저장되어, 창을 닫았다 다시 열어도 이어서 작업할 수 있습니다. 단, 이 HTML 파일을 다른 PC·기기로 보내면 지금까지 체크한 내용은 함께 가지 않습니다(같은 브라우저에서만 이어집니다). 기기를 옮길 땐 "선택 백업 저장"을 이용하세요.</div>
+</div>
+<div class="toast" id="toast"></div>
+<footer><span style="font-family:'Rajdhani','Segoe UI',sans-serif; font-weight:700; letter-spacing:1px; color:var(--accent);">PICKONE</span> · Powered by Unknown</footer>
+
+<script id="pickone-data" type="application/json">{{DATA_JSON}}</script>
+<script id="pickone-large" type="application/json">{{LARGE_JSON}}</script>
+<script>
+"use strict";
+var DATA = JSON.parse(document.getElementById("pickone-data").textContent);
+var LARGE = null; // lazy parse (대용량)
+function getLarge(uid){
+  if (!LARGE) { LARGE = JSON.parse(document.getElementById("pickone-large").textContent); }
+  return LARGE[uid] || null;
+}
+var ITEMS = DATA.items; // [{u,d,t(humb),dt}]
+var byUid = {}; ITEMS.forEach(function(it){ byUid[it.u] = it; });
+var LSKEY = "pickone:" + DATA.title;
+// state: {uid: {s:1, r:0-5, m:""}}
+var state = {};
+try { state = JSON.parse(localStorage.getItem(LSKEY) || "{}"); } catch(e) { state = {}; }
+function persist(){ try { localStorage.setItem(LSKEY, JSON.stringify(state)); } catch(e){} }
+function st(u){ return state[u] || (state[u] = {s:0, r:0, m:""}); }
+function selCount(){ var n=0; for (var k in state) if (state[k].s) n++; return n; }
+
+// ---- 헤더 ----
+document.getElementById("title").textContent = DATA.title;
+if (DATA.notice) document.getElementById("notice").textContent = DATA.notice;
+function updGuide(){
+  var g = document.getElementById("guide"), n = selCount();
+  g.textContent = DATA.goal ? (n + " / " + DATA.goal + " 선택") : (n + "장 선택");
+  g.className = "guide" + (DATA.goal && n >= DATA.goal ? " hit" : "");
+}
+
+// ---- 그리드 + IntersectionObserver lazy ----
+var grid = document.getElementById("grid");
+var io = new IntersectionObserver(function(entries){
+  entries.forEach(function(en){
+    if (en.isIntersecting) {
+      var img = en.target.querySelector("img");
+      if (img && !img.src) img.src = byUid[en.target.dataset.uid].t;
+      io.unobserve(en.target);
+    }
+  });
+}, {rootMargin:"600px"});
+
+var order = ITEMS.slice();
+function sortItems(){
+  var mode = document.getElementById("sort").value;
+  order = ITEMS.slice();
+  if (mode === "time") order.sort(function(a,b){ return (a.dt||"") < (b.dt||"") ? -1 : 1; });
+  else order.sort(function(a,b){ return a.d.toLowerCase() < b.d.toLowerCase() ? -1 : 1; });
+}
+var filterMode = "all";
+function passFilter(it){
+  var s = state[it.u] || {};
+  switch (filterMode) {
+    case "sel": return !!s.s;
+    case "memo": return !!(s.m && s.m.length);
+    case "r1": case "r2": case "r3": case "r4": case "r5":
+      return s.r === parseInt(filterMode.slice(1), 10);
+    default: return true;
+  }
+}
+function render(){
+  io.disconnect(); grid.innerHTML = "";
+  order.forEach(function(it){
+    var s = state[it.u];
+    if (!passFilter(it)) return;
+    var c = document.createElement("div");
+    c.className = "cell" + (s && s.s ? " sel" : "");
+    c.dataset.uid = it.u;
+    var meta = "";
+    if (s && s.r) meta += "★".repeat(s.r);
+    c.innerHTML = '<span class="chk">✓</span><img class="ph" alt="">' +
+      '<div class="nm"><span>' + esc(it.d) + '</span><span class="stars-mini">' +
+      (s && s.m ? '<span class="memo-dot">✎</span> ' : '') + meta + '</span></div>';
+    c.addEventListener("click", function(ev){ onCell(it.u, ev); });
+    grid.appendChild(c);
+    io.observe(c);
+  });
+  updGuide();
+}
+function esc(s){ return s.replace(/&/g,"&amp;").replace(/</g,"&lt;"); }
+var lastTap = {u:0, t:0};
+function onCell(u, ev){
+  // 한 번 클릭=선택 토글, 더블클릭(400ms)=라이트박스
+  var now = Date.now();
+  if (lastTap.u === u && now - lastTap.t < 400) { openLb(u); lastTap = {u:0,t:0}; return; }
+  lastTap = {u:u, t:now};
+  setTimeout(function(){
+    if (lastTap.u === u && lastTap.t && Date.now() - lastTap.t >= 380) { toggle(u); lastTap = {u:0,t:0}; }
+  }, 400);
+}
+function toggle(u){ var s = st(u); s.s = s.s ? 0 : 1; persist(); refreshCell(u); updGuide(); }
+function refreshCell(u){
+  var c = grid.querySelector('[data-uid="' + u + '"]');
+  if (!c) return;
+  var s = state[u] || {};
+  c.className = "cell" + (s.s ? " sel" : "");
+  var mini = c.querySelector(".stars-mini");
+  mini.innerHTML = (s.m ? '<span class="memo-dot">✎</span> ' : '') + (s.r ? "★".repeat(s.r) : "");
+}
+
+// ---- 라이트박스 ----
+var lb = document.getElementById("lb"), lbimg = document.getElementById("lbimg");
+var curIdx = -1;
+function visList(){ return order.filter(passFilter); }
+function openLb(u){
+  var list = visList();
+  curIdx = list.findIndex(function(it){ return it.u === u; });
+  if (curIdx < 0) return;
+  lb.classList.add("open"); showLb();
+}
+function showLb(){
+  var list = visList(); if (!list.length) { closeLb(); return; }
+  curIdx = Math.max(0, Math.min(curIdx, list.length - 1));
+  var it = list[curIdx], s = st(it.u);
+  lbimg.src = getLarge(it.u) || it.t;
+  document.getElementById("lbname").textContent = it.d + (it.dt ? "  ·  " + it.dt : "");
+  document.getElementById("lbcount").textContent = (curIdx + 1) + " / " + list.length;
+  var btn = document.getElementById("lbsel");
+  btn.textContent = s.s ? "✓ 선택됨" : "선택";
+  btn.className = s.s ? "primary" : "";
+  var stars = document.getElementById("lbstars").children;
+  for (var i = 0; i < 5; i++) stars[i].className = i < s.r ? "on" : "";
+  document.getElementById("lbmemo").value = s.m || "";
+}
+function closeLb(){ lb.classList.remove("open"); lbimg.src = ""; render(); }
+document.getElementById("lbclose").onclick = closeLb;
+document.getElementById("prev").onclick = function(){ curIdx--; showLb(); };
+document.getElementById("next").onclick = function(){ curIdx++; showLb(); };
+document.getElementById("lbsel").onclick = function(){
+  var it = visList()[curIdx]; if (!it) return;
+  var s = st(it.u); s.s = s.s ? 0 : 1; persist(); showLb(); updGuide();
+};
+Array.prototype.forEach.call(document.getElementById("lbstars").children, function(el, i){
+  el.onclick = function(){
+    var it = visList()[curIdx]; if (!it) return;
+    var s = st(it.u); s.r = (s.r === i + 1) ? 0 : i + 1; persist(); showLb();
+  };
+});
+document.getElementById("lbmemo").addEventListener("input", function(){
+  var it = visList()[curIdx]; if (!it) return;
+  st(it.u).m = this.value; persist();
+});
+document.addEventListener("keydown", function(e){
+  if (!lb.classList.contains("open")) return;
+  if (e.target.id === "lbmemo" && e.key !== "Escape") return;
+  if (e.key === "ArrowLeft") { curIdx--; showLb(); }
+  else if (e.key === "ArrowRight") { curIdx++; showLb(); }
+  else if (e.key === "Escape") closeLb();
+  else if (e.key === " ") { e.preventDefault(); document.getElementById("lbsel").click(); }
+});
+// 스와이프
+var tx = null;
+lbimg.addEventListener("touchstart", function(e){ tx = e.touches[0].clientX; }, {passive:true});
+lbimg.addEventListener("touchend", function(e){
+  if (tx === null) return;
+  var dx = e.changedTouches[0].clientX - tx; tx = null;
+  if (dx > 50) { curIdx--; showLb(); } else if (dx < -50) { curIdx++; showLb(); }
+}, {passive:true});
+
+// ---- 결과 출력 ----
+function selectedItems(){
+  return order.filter(function(it){ var s = state[it.u]; return s && s.s; });
+}
+document.getElementById("btnSave").onclick = function(){
+  var sel = selectedItems();
+  if (!sel.length) { toast("선택된 사진이 없습니다"); return; }
+  var out = { app:"pickone", v:1, title:DATA.title,
+    selected: sel.map(function(it){ var s = state[it.u]; return {u:it.u, d:it.d, star:s.r||0, memo:s.m||""}; }) };
+  download(DATA.title + "_셀렉결과.json",
+    JSON.stringify(out, null, 1));
+  toast("결과 파일 저장됨 — 이 파일을 작가에게 보내주세요");
+};
+function copyText(text){
+  var box = document.getElementById("outbox");
+  box.style.display = "block"; box.value = text;
+  document.getElementById("btnSelAll").style.display = "inline-block";
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(function(){ toast("복사되었습니다"); },
+      function(){ toast("자동 복사 불가 — 아래 상자에서 직접 복사하세요"); });
+  } else { box.focus(); box.select(); toast("아래 상자에서 직접 복사하세요"); }
+}
+document.getElementById("btnSelAll").onclick = function(){
+  var box = document.getElementById("outbox"); box.focus(); box.select(); box.setSelectionRange(0, box.value.length);
+};
+document.getElementById("btnCopyA").onclick = function(){
+  var sel = selectedItems(); if (!sel.length) { toast("선택된 사진이 없습니다"); return; }
+  var lines = [DATA.title + " 셀렉 결과 (" + sel.length + "장)"];
+  sel.forEach(function(it){
+    var s = state[it.u], extra = "";
+    if (s.r) extra += " ★" + s.r;
+    if (s.m) extra += " - " + s.m;
+    lines.push(it.d + extra);
+  });
+  copyText(lines.join("\n"));
+};
+document.getElementById("btnCopyN").onclick = function(){
+  var sel = selectedItems(); if (!sel.length) { toast("선택된 사진이 없습니다"); return; }
+  copyText(sel.map(function(it){ return it.d; }).join(", "));
+};
+// 백업
+document.getElementById("btnBackup").onclick = function(){
+  download(DATA.title + "_선택백업.txt", JSON.stringify({key:LSKEY, state:state}));
+  toast("백업 저장됨");
+};
+document.getElementById("btnRestore").onclick = function(){ document.getElementById("fileRestore").click(); };
+document.getElementById("fileRestore").addEventListener("change", function(){
+  var f = this.files[0]; if (!f) return;
+  var r = new FileReader();
+  r.onload = function(){
+    try { var o = JSON.parse(r.result); state = o.state || o; persist(); render(); toast("복원 완료"); }
+    catch(e) { toast("백업 파일을 읽을 수 없습니다"); }
+  };
+  r.readAsText(f);
+});
+function download(name, text){
+  var a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([text], {type:"application/octet-stream"}));
+  a.download = name; document.body.appendChild(a); a.click();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 800);
+}
+var toastT = null;
+function toast(msg){
+  var t = document.getElementById("toast");
+  t.textContent = msg; t.style.display = "block";
+  clearTimeout(toastT); toastT = setTimeout(function(){ t.style.display = "none"; }, 2600);
+}
+// 툴바
+document.getElementById("filter").addEventListener("change", function(){
+  filterMode = this.value; render();
+});
+document.getElementById("sort").addEventListener("change", function(){ sortItems(); render(); });
+window.addEventListener("beforeunload", function(e){
+  if (selCount()) { e.preventDefault(); e.returnValue = ""; }
+});
+sortItems(); render();
+</script>
+</body>
+</html>

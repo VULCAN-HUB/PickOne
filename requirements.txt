@@ -1,0 +1,11 @@
+# PickOne 런타임 + 빌드 의존성 (Windows / macOS 공통)
+# Mac 셋업:  python3 -m venv venv && ./venv/bin/pip install -r requirements.txt
+# Win 셋업:  py -3.12 -m venv venv && .\venv\Scripts\pip install -r requirements.txt
+#
+# 검증된 조합(2026-06-13, Windows Python 3.12). Mac에서도 동일 메이저로 설치 권장.
+PyQt5==5.15.11
+Pillow==12.2.0
+pillow-heif==1.4.0
+piexif==1.1.3
+pytest==8.*
+pyinstaller==6.20.0
