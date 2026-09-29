@@ -25,3 +25,7 @@ JPG / PNG / HEIC / TIFF / WebP / BMP + RAW(CR3·CR2·NEF·ARW·DNG·ORF·RW2·RA
 ## 업데이트 내역
 - **v0.1-beta** (2026-07) — 첫 베타
 
+
+## 라이선스
+
+GPL-3.0 — [LICENSE](LICENSE) 참고. 이 프로그램은 PyQt5(GPL)를 씁니다.
