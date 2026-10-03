@@ -1,15 +1,30 @@
-# PickOne — 서버 0원 사진 셀렉팅 도구
+# PickOne
 
-PROJECT 03 · Unknown · **BETA Ver-0.1**
+**테스트 중 · v0.1-beta · 정식 출시 전**
 
-사진 셀렉팅을 서버·구독료 없이 처리하는 포터블 도구. 작가가 저용량 미리보기를
-**단일 HTML 파일**로 만들어 보내면, 클라이언트가 브라우저에서 고르고, 그 결과로
-작가 PC의 **원본을 자동으로 골라 복사**한다.
+사진을 단일 HTML 갤러리로 보내고, 받은 선택 결과로 원본을 골라 복사하는 데스크톱 앱입니다. 별도 갤러리 서버나 구독료 없이 사용합니다.
 
-## 다운로드
-[Releases](https://github.com/VULCAN-HUB/PickOne/releases/latest) 에서 받아 실행하세요. 사용법 자세히: [docs/PickOne_사용법.md](docs/PickOne_사용법.md)
+**[다운로드](https://github.com/VULCAN-HUB/PickOne/releases/tag/v0.1-beta)** · **[사용 안내](docs/PickOne_사용법.md)**
 
-## 사용 흐름
+제작: **Unknown** · [홈페이지](https://vulcan-hub.github.io/) · [YouTube](https://www.youtube.com/@unknown8563)
+
+## 기능
+
+- 사진 폴더를 단일 HTML 갤러리로 만들고 목표 용량에 맞춰 화질을 조절합니다.
+- 브라우저에서 사진 선택·별점·메모와 보기 필터를 사용합니다.
+- 결과 JSON 파일의 식별 정보를 기준으로 원본을 새 폴더에 복사합니다.
+
+## 요구사항과 상태
+
+| 항목 | 내용 |
+|---|---|
+| 실행 환경 | Windows 10/11 x64 · 갤러리 열람용 웹 브라우저 |
+| 배포 형태 | Windows 단일 EXE · macOS 준비 중 |
+
+첫 공개 베타입니다. 공개 문서에 별도의 기기별 검증 결과가 명시되어 있지 않습니다. 영상은 지원하지 않으며 RAW는 임베디드 미리보기를 추출합니다.
+
+## 사용법
+
 1. 패키징 탭에 사진 폴더 드래그 → 제목·목표장수·**목표 파일 용량(MB)** 설정 → 생성
    - 목표 용량 **자동**: 화질 손실 없는 선까지 줄임 / **지정**: 그 용량 이하로 화질 자동 조절
    - 사진이 많아도 **항상 HTML 1개**로 출력
@@ -18,14 +33,15 @@ PROJECT 03 · Unknown · **BETA Ver-0.1**
    - 선택·별점·메모는 브라우저에 자동 저장(같은 브라우저에서만 이어짐)
 4. 회수 탭: 원본 폴더 지정 + 결과 파일 드래그 → 파싱 미리보기 확인 → **대상 위치 + 폴더 이름**(비우면 받은 파일 이름) → 복사 실행
 
-## 지원 포맷
+### 지원 포맷
 JPG / PNG / HEIC / TIFF / WebP / BMP + RAW(CR3·CR2·NEF·ARW·DNG·ORF·RW2·RAF — 임베디드 프리뷰 추출).
 영상 제외(사진만).
 
 ## 업데이트 내역
 - **v0.1-beta** (2026-07) — 첫 베타
 
+## 라이선스·공개 정책
 
-## 라이선스
+GPL-3.0 — [LICENSE](LICENSE). PyQt5에는 GPL이 적용됩니다.
 
-GPL-3.0 — [LICENSE](LICENSE) 참고. 이 프로그램은 PyQt5(GPL)를 씁니다.
+[공개 정책: VULCAN-0.3](https://github.com/VULCAN-HUB/RawBaker/blob/main/PUBLICATION_POLICY.md)
